@@ -58,10 +58,11 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: settings.SMTP.user,
     pass: settings.SMTP.password,
-  }
+  },
 });
 
 export async function sandEmail(data: QuizData, notificationEmail: string) {
+  console.log(data, notificationEmail)
   // Формируем HTML для контактной информации
   let htmlContent = `
     <div style="font-family: sans-serif; padding: 20px;">
@@ -132,7 +133,7 @@ export async function sandEmail(data: QuizData, notificationEmail: string) {
   }
 
   htmlContent += `</div>`;
-
+  
   // Отправляем письмо
   await transporter.sendMail({
     from: settings.SMTP.user,
@@ -141,4 +142,5 @@ export async function sandEmail(data: QuizData, notificationEmail: string) {
     text: 'Новые результаты квиза', // резервный текст
     html: htmlContent,
   });
+
 }

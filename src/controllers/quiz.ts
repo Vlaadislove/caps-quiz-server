@@ -43,7 +43,7 @@ export const createQuize = async (req: Request, res: Response): Promise<void> =>
         current[lastField] = `${baseUrl}/upload/${relativeFolder}/${path.basename(file.path)}`;
       });
 
-      const { startPage, questions, contactForm, design, quizInfo} = jsonData;
+      const { startPage, questions, contactForm, design, quizInfo } = jsonData;
 
       const newQuiz = new QuizModel({
         quizId: folderId,
@@ -161,15 +161,21 @@ export const sendAnswer = async (req: Request, res: Response): Promise<void> => 
       });
     }
 
-    console.log("Updated answers:", data.answers)
+    // console.log("Updated answers:", data.answers)
 
-    const quiz = await QuizModel.findOne({ quizId: data.quizId })
+    res.status(200).json({ message: "Quiz saved successfully" });
+    
+    setImmediate(async () => {
+      try {
+        const quiz = await QuizModel.findOne({ quizId: data.quizId });
+        if (!quiz) return;
 
-    if(!quiz) return
-    await sandEmail(data, quiz.quizInfo.notificationEmail)
-
-
-    res.status(200).json({ message: "Quiz saved successfully", quizId: data.quizId, answers: data.answers });
+        await sandEmail(data, quiz.quizInfo.notificationEmail);
+        console.log("Email sent successfully");
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+      }
+    });
   } catch (error) {
     console.error("Error in sendAnswer:", error);
     res.status(500).json({ error: "Internal Server Error" });
