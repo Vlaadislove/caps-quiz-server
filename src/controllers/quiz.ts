@@ -11,7 +11,10 @@ export const createQuize = async (req: Request, res: Response): Promise<void> =>
     const jsonData = JSON.parse(req.body.data);
     const folderId = path.basename(req.uniqueFolder as string);
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    // const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const baseUrl = `https://${req.get("host")}`;
+
+
     const relativeFolder = path.relative(path.join(process.cwd(), "upload"), req.uniqueFolder as string);
 
     if (Array.isArray(req.files)) {
@@ -55,6 +58,7 @@ export const createQuize = async (req: Request, res: Response): Promise<void> =>
       });
 
       await newQuiz.save();
+      res.status(200).json({ message: "Quize created successfully" });
     } else {
       console.error("req.files is not an array or is undefined");
     }
@@ -108,7 +112,9 @@ export const uploadAnswer = multer({ storage });
 export const sendAnswer = async (req: Request, res: Response): Promise<void> => {
   try {
     const data = JSON.parse(req.body.data);
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    // const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const baseUrl = `https://${req.get("host")}`;
+    
     const quizFolder = path.join(process.cwd(), "upload", data.quizId);
     const filesFolder = path.join(quizFolder, "files");
 
