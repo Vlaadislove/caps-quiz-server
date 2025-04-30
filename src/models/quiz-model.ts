@@ -109,10 +109,18 @@ const QuestionSchema = new mongoose.Schema({
   answers: {
     type: Array,
     validate: {
-      validator: function (answers: any[]): boolean {
+      validator: function (this: { type: string }, answers: any[]): boolean {
         if (!Array.isArray(answers)) return false;
         if (answers.length === 0) return true;
 
+        if (this.type === 'input') {
+          return answers.every(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              typeof item.placeholder === 'string'
+          );
+        }
         const isStringArray = answers.every((item) => typeof item === "string");
 
         const isTextAndFileArray = answers.every(

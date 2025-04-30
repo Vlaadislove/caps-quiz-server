@@ -3,9 +3,11 @@ import * as settings from "../settings"
 
 // types.ts
 export interface FormContact {
-  name: string;
-  email: string;
-  phone: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  source?: string;
 }
 
 export interface MultipleAnswer {
@@ -17,7 +19,7 @@ export interface MultipleAnswer {
 export interface SingleAnswer {
   question: string;
   answer: string;
-  questionType: 'single' | 'input' | 'dropdownList' | 'calendar';
+  questionType: 'single' | 'dropdownList' | 'calendar';
 }
 
 export interface ImageAnswer {
@@ -37,9 +39,16 @@ export interface FileUploadAnswer {
   questionType: 'fileUpload';
 }
 
+export interface InputAnswer {
+  question: string;
+  answer: Record<string, string>;
+  questionType: 'input';
+}
+
 export type Answer =
   | MultipleAnswer
   | SingleAnswer
+  | InputAnswer
   | ImageAnswer
   | FileUploadAnswer;
 
@@ -65,16 +74,17 @@ export async function sandEmail(data: QuizData, notificationEmail: string) {
   console.log(data, notificationEmail)
   // Формируем HTML для контактной информации
   let htmlContent = `
-    <div style="font-family: sans-serif; padding: 20px;">
-      <h1 style="text-align: center;">Результаты CASP quiz</h1>
-      <h2>Контактная информация</h2>
-      <p><strong>Имя:</strong> ${data.formContact.name}</p>
-      <p><strong>Email:</strong> ${data.formContact.email}</p>
-      <p><strong>Телефон:</strong> ${data.formContact.phone}</p>
-      <hr>
-      <h2>Ответы:</h2>
-  `;
-
+  <div style="font-family: sans-serif; padding: 20px;">
+    <h1 style="text-align: center;">Результаты CASP quiz</h1>
+    <h2>Контактная информация</h2>
+    <p><strong>Имя:</strong> ${data.formContact.name || 'не указано'}</p>
+    <p><strong>Email:</strong> ${data.formContact.email || 'не указано'}</p>
+    <p><strong>Телефон:</strong> ${data.formContact.phone || 'не указано'}</p>
+    <p><strong>Название компании:</strong> ${data.formContact.companyName || 'не указано'}</p>
+    <p><strong>Откуда узнали о нас:</strong> ${data.formContact.source || 'не указано'}</p>
+    <hr>
+    <h2>Ответы:</h2>
+`;
   // Перебираем все ответы.
   // Задаём тип возвращаемого значения Object.entries как Array<[string, Answer]>
   for (const [key, answerItem] of Object.entries(data.answers) as Array<[string, Answer]>) {
@@ -95,11 +105,23 @@ export async function sandEmail(data: QuizData, notificationEmail: string) {
         }
         break;
 
-      case 'single':
       case 'input':
+        if (
+          answerItem.answer &&
+          typeof answerItem.answer === 'object' &&
+          !Array.isArray(answerItem.answer)
+        ) {
+          htmlContent += `<p><strong>Ответы:</strong></p><ul>`;
+          for (const [field, value] of Object.entries(answerItem.answer)) {
+            htmlContent += `<li><strong>${field}:</strong> ${value}</li>`;
+          }
+          htmlContent += `</ul>`;
+        }
+        break;
+
+      case 'single':
       case 'dropdownList':
       case 'calendar':
-        // Ожидается, что answer – строка
         htmlContent += `<p><strong>Ответ:</strong> ${answerItem.answer}</p>`;
         break;
 
@@ -133,13 +155,13 @@ export async function sandEmail(data: QuizData, notificationEmail: string) {
   }
 
   htmlContent += `</div>`;
-  
-  // Отправляем письмо
+
+
   await transporter.sendMail({
     from: settings.SMTP.user,
     to: notificationEmail,
     subject: 'Результаты CASP quiz',
-    text: 'Новые результаты квиза', // резервный текст
+    text: 'Новые результаты квиза',
     html: htmlContent,
   });
 
